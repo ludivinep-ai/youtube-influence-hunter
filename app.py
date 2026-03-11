@@ -17,16 +17,28 @@ if sys.platform == "win32":
 
 from streamlit_gsheets import GSheetsConnection
 
-from engine_youtube_scraper import (
-    create_driver, search_channels, scrape_channel_full, fmt,
-)
+try:
+    from engine_youtube_scraper import (
+        create_driver, search_channels, scrape_channel_full, fmt,
+    )
+    from skill_live_updater import bulk_rescrape
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+    def fmt(v):
+        if v is None: return "N/A"
+        if isinstance(v, (int, float)):
+            if v >= 1_000_000: return f"{v/1_000_000:.1f}M"
+            if v >= 1_000: return f"{v/1_000:.0f}k" if v/1_000 == int(v/1_000) else f"{v/1_000:.1f}k"
+            return str(int(v))
+        return str(v)
+
 from skill_influence_scoring import (
     is_excluded, classify, compute_score,
     MIN_AVG_VIEWS, MIN_SCORE_DISPLAY,
 )
 from skill_contact_finder import find_contacts, format_contact_tags
 from skill_email_generator import generate_email, build_mailto_link
-from skill_live_updater import bulk_rescrape
 
 # ============================================================
 # GOOGLE SHEETS CONFIG
@@ -922,6 +934,10 @@ def tab_prospection(kw_input, max_per_kw, min_views, subs_range=(5000, 8000000))
     if st.session_state.pop("show_balloons", False):
         st.balloons()
 
+    if not SELENIUM_AVAILABLE:
+        st.info("La prospection YouTube n'est pas disponible sur cette instance (Selenium requis).")
+        return
+
     launch = st.button("🚀 Lancer l'analyse", width="stretch", type="primary")
 
     if launch:
@@ -1158,7 +1174,7 @@ def tab_a_contacter():
         sort_by = st.selectbox("🔃 Trier par", ["Score", "Vues Moyennes", "Abonnés"], key="sf")
     with cf4:
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        if st.button("🔄 Scanner contacts", help="Recherche emails & réseaux pour toutes les chaînes", key="rescan_contacts"):
+        if SELENIUM_AVAILABLE and st.button("🔄 Scanner contacts", help="Recherche emails & réseaux pour toutes les chaînes", key="rescan_contacts"):
             _rescan_contacts(db)
 
     filtered = db.copy()
@@ -1464,7 +1480,7 @@ def tab_suivi_campagnes():
     # =============================================
     rescrape_col1, rescrape_col2 = st.columns([1, 3])
     with rescrape_col1:
-        rescrape_btn = st.button("🔄 Actualiser les statistiques YouTube", key="rescrape_btn")
+        rescrape_btn = st.button("🔄 Actualiser les statistiques YouTube", key="rescrape_btn", disabled=not SELENIUM_AVAILABLE)
     with rescrape_col2:
         st.markdown(f"<div style='padding-top:8px; color:{TEXT_MUTED}; font-size:0.82rem;'>Re-scrape abonnés & vues moyennes pour chaque chaîne du Suivi</div>", unsafe_allow_html=True)
 

@@ -4,10 +4,13 @@ Re-scrape les statistiques YouTube (abonnés, vues moyennes) pour une liste de c
 et met à jour le DataFrame en temps réel.
 """
 
-from engine_youtube_scraper import (
-    create_driver, safe_get, get_yt_initial_data,
-    scrape_subscribers, scrape_views_and_videos, fmt,
-)
+try:
+    from engine_youtube_scraper import (
+        create_driver, safe_get, get_yt_initial_data,
+        scrape_subscribers, scrape_views_and_videos, fmt,
+    )
+except ImportError:
+    pass  # Selenium not available (e.g. Streamlit Cloud)
 
 
 def rescrape_channel_stats(driver, channel_url):

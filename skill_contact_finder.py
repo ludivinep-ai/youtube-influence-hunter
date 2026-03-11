@@ -7,7 +7,11 @@ Stratégie de contournement Captcha YouTube :
 """
 
 import re
-from engine_youtube_scraper import safe_get, get_yt_initial_data, clean_yt_text
+
+try:
+    from engine_youtube_scraper import safe_get, get_yt_initial_data, clean_yt_text
+except ImportError:
+    pass  # Selenium not available (e.g. Streamlit Cloud)
 
 
 # ============================================================
